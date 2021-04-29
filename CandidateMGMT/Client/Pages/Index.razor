@@ -1,0 +1,74 @@
+﻿@page "/"
+@using CandidateMGMT.Shared.ViewModels
+@inject HttpClient Http
+<!-- Button trigger modal -->
+<button type="button" class="btn btn-primary mt-3" data-toggle="modal" data-target="#portal">
+    Thêm ứng viên
+</button>
+
+<ProtalModal/>
+
+<form>
+    <div class="input-group w-25 py-3">
+        <input type="text" class="form-control" placeholder="Tìm kiếm ứng viên" name="searchStr">
+        <div class="input-group-append">
+            <button class="btn btn-primary" type="submit">
+                Tìm kiếm
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- List candidate -->
+<table class="table table-bordered">
+    <thead>
+        <tr class="text-center bg-secondary text-white">
+            <th scope="col">Chức danh</th>
+            <th scope="col">Vị trí</th>
+            <th scope="col">Họ tên</th>
+            <th scope="col">Ngày sinh</th>
+            <th scope="col">Địa chỉ</th>
+            <th scope="col">Số điện thoại</th>
+            <th scope="col">Email</th>
+            <th scope="col">Người giới thiệu</th>
+            <th scope="col">CV</th>
+            <th scope="col">Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in candi)
+        {
+            <tr>
+                <td>@item.LevelName</td>
+                <td>@item.PositionName</td>
+                <td>@item.FullName</td>
+                <td>@item.Birthday</td>
+                <td>@item.Address</td>
+                <td>@item.Phone</td>
+                <td>@item.Email</td>
+                <td>@item.IntroduceName</td>
+                <td>@item.CVPath</td>
+                <td class="text-center">
+                    <button class="btn btn-outline-success btn-sm mr-1">Sửa</button>
+                    <button class="btn btn-outline-danger btn-sm">Xoá</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+
+@code {
+    private List<CandidateVM> candi = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        candi = await Http.GetFromJsonAsync<List<CandidateVM>>("api/candidate");
+    }
+
+    void ShowModal()
+    {
+        
+    }
+}
