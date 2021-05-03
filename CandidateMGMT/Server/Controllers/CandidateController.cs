@@ -1,13 +1,11 @@
-﻿using System;
+﻿using CandidateMGMT.Server.Services;
+using CandidateMGMT.Shared;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using CandidateMGMT.Server.Data;
-using CandidateMGMT.Shared;
-using CandidateMGMT.Shared.ViewModels;
 
 namespace CandidateMGMT.Server.Controllers
 {
@@ -15,109 +13,132 @@ namespace CandidateMGMT.Server.Controllers
     [ApiController]
     public class CandidateController : ControllerBase
     {
-        private readonly CandidateDbContext _context;
+        private readonly ICandidateService _candidateService;
 
-        public CandidateController(CandidateDbContext context)
+        public CandidateController(ICandidateService candidateService)
         {
-            _context = context;
+            _candidateService = candidateService;
         }
 
         // GET: api/Candidate
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Candidate>>> GetCandidate()
         {
-            var listCandi = await _context.Candidate
-                .Select(x => new CandidateVM
-                {
-                    CandidateId = x.CandidateId,
-                    LevelId = x.LevelId,
-                    LevelName = x.Level.LevelName,
-                    PositionId = x.PositionId,
-                    PositionName = x.Position.PositionName,
-                    FullName = x.FullName,
-                    Birthday = x.Birthday,
-                    Address = x.Address,
-                    Phone = x.Phone,
-                    Email = x.Email,
-                    IntroduceName = x.IntroduceName
-                })
-                .ToListAsync();
-            return Ok(listCandi);
+            try
+            {
+                return Ok(await _candidateService.GetAll());
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Error retrieving data from the database");
+            }
         }
 
         // GET: api/Candidate/5
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Candidate>> GetCandidate(int id)
         {
-            var candidate = await _context.Candidate.FindAsync(id);
-
-            if (candidate == null)
+            try
             {
-                return NotFound();
-            }
+                var result = await _candidateService.GetById(id);
 
-            return candidate;
+                if (result == null) return NotFound();
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Error retrieving data from the database");
+            }
         }
 
         // PUT: api/Candidate/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCandidate(int id, Candidate candidate)
+        public async Task<ActionResult<Candidate>> PutCandidate(int id, Candidate candidate)
         {
-            if (id != candidate.CandidateId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(candidate).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CandidateExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+                if (id != candidate.CandidateId)
+                    return BadRequest("Candidate ID mismatch");
 
-            return NoContent();
+                var candidateToUpdate = await _candidateService.GetById(id);
+
+                if (candidateToUpdate == null)
+                    return NotFound($"Candidate with Id = {id} not found");
+
+                return await _candidateService.Update(candidate);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Error updating data");
+            }
         }
 
         // POST: api/Candidate
         [HttpPost]
         public async Task<ActionResult<Candidate>> PostCandidate(Candidate candidate)
         {
-            _context.Candidate.Add(candidate);
-            await _context.SaveChangesAsync();
+            try
+            {
+                if (candidate == null)
+                    return BadRequest();
 
-            return CreatedAtAction("GetCandidate", new { id = candidate.CandidateId }, candidate);
+                var createdCandidate = await _candidateService.Create(candidate);
+
+                return CreatedAtAction(nameof(GetCandidate),
+                    new { id = createdCandidate.CandidateId }, createdCandidate);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Error creating new candidate record");
+            }
         }
 
         // DELETE: api/Candidate/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCandidate(int id)
+        public async Task<ActionResult<Candidate>> DeleteCandidate(int id)
         {
-            var candidate = await _context.Candidate.FindAsync(id);
-            if (candidate == null)
+            try
             {
-                return NotFound();
+                var candidateToDelete = await _candidateService.GetById(id);
+
+                if (candidateToDelete == null)
+                {
+                    return NotFound($"Candidate with Id = {id} not found");
+                }
+
+                return await _candidateService.Delete(id);
             }
-
-            _context.Candidate.Remove(candidate);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Error deleting data");
+            }
         }
 
-        private bool CandidateExists(int id)
+        [HttpGet("{search}")]
+        public async Task<ActionResult<IEnumerable<Candidate>>> Search(string searchStr)
         {
-            return _context.Candidate.Any(e => e.CandidateId == id);
+            try
+            {
+                var result = await _candidateService.Search(searchStr);
+
+                if (result.Any())
+                {
+                    return Ok(result);
+                }
+
+                return NotFound();
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    "Error retrieving data from the database");
+            }
         }
     }
 }

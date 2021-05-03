@@ -1,16 +1,15 @@
 ﻿@page "/"
-@using CandidateMGMT.Shared.ViewModels
 @inject HttpClient Http
+
 <!-- Button trigger modal -->
-<button type="button" class="btn btn-primary mt-3" data-toggle="modal" data-target="#portal">
+<button type="button" class="btn btn-primary mt-3" @onclick="() => ShowModal(0)">
     Thêm ứng viên
 </button>
 
-<ProtalModal/>
 
-<form>
+<form @onsubmit="Search">
     <div class="input-group w-25 py-3">
-        <input type="text" class="form-control" placeholder="Tìm kiếm ứng viên" name="searchStr">
+        <input type="text" class="form-control" placeholder="Tìm kiếm ứng viên" @bind="searchStr">
         <div class="input-group-append">
             <button class="btn btn-primary" type="submit">
                 Tìm kiếm
@@ -18,7 +17,6 @@
         </div>
     </div>
 </form>
-
 <!-- List candidate -->
 <table class="table table-bordered">
     <thead>
@@ -36,11 +34,11 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var item in candi)
+        @foreach (var item in lstCandi)
         {
             <tr>
-                <td>@item.LevelName</td>
-                <td>@item.PositionName</td>
+                <td>@item.Level.LevelName</td>
+                <td>@item.Position.PositionName</td>
                 <td>@item.FullName</td>
                 <td>@item.Birthday</td>
                 <td>@item.Address</td>
@@ -49,26 +47,179 @@
                 <td>@item.IntroduceName</td>
                 <td>@item.CVPath</td>
                 <td class="text-center">
-                    <button class="btn btn-outline-success btn-sm mr-1">Sửa</button>
-                    <button class="btn btn-outline-danger btn-sm">Xoá</button>
+                    <button class="btn btn-outline-success btn-sm mr-1" @onclick="() => ShowModal(item.CandidateId)">Sửa</button>
+                    <button class="btn btn-outline-danger btn-sm" @onclick="() => Delete(item.CandidateId)">Xoá</button>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
+@if (display)
+{
+    <div class="modal fade show d-block" id="myModal1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Nhập ứng viên</h5>
+                    <button type="button" class="close" @onclick="HideModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="myModalBodyDiv1">
+                    <EditForm Model="candi" OnSubmit="PutPost">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Vị trí</label>
+                                <InputSelect class="custom-select" @bind-Value="candi.LevelId">
+                                    <option hidden></option>
+                                    @foreach (var item in lstLevel)
+                                    {
+                                        <option value="@item.LevelId">@item.LevelName</option>
+                                    }
+                                </InputSelect>
+                            </div>
 
+                            <div class="form-group col-md-6">
+                                <label>Chức danh</label>
+                                <InputSelect class="custom-select" @bind-Value="candi.PositionId">
+                                    <option hidden></option>
+                                    @foreach (var item in lstPosition)
+                                    {
+                                        <option value="@item.PositionId">@item.PositionName</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Import CV</label>
+                                <div class="custom-file">
+                                    <InputFile class="custom-file-input" id="customFile" @bind-Value="@candi.CVPath" multiple/>
+                                    <label class="custom-file-label" for="customFile">Choose file</label>
+                                </div>
+                            </div>
+
+                            <div class="form-group col-md-6">
+                                <label>Người giới thiệu</label>
+                                <InputText class="form-control" @bind-Value="@candi.IntroduceName" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label>Họ tên</label>
+                                <input class="form-control" @bind-value="@candi.FullName" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label>Phone</label>
+                                <input class="form-control" @bind-value="@candi.Phone" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="inputBirthday">Birthday</label>
+                                <input type="text" class="form-control" @bind-value="@candi.Birthday" />
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="inputEmail">Email</label>
+                                <input type="text" class="form-control" @bind-value="@candi.Email" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label for="inputAddress">Address</label>
+                                <input type="text" class="form-control" @bind-value="@candi.Address" />
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success">
+                                <span>Save</span>
+                            </button>
+                        </div>
+                    </EditForm>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
-    private List<CandidateVM> candi = new();
+
+    private bool display { get; set; }
+
+    private int candidateId { get; set; }
+
+    private string searchStr { get; set; }
+
+    private Candidate candi = new();
+
+    private List<Level> lstLevel = new();
+
+    private List<Position> lstPosition = new();
+
+    private List<Candidate> lstCandi = new List<Candidate>();
 
     protected override async Task OnInitializedAsync()
     {
-        candi = await Http.GetFromJsonAsync<List<CandidateVM>>("api/candidate");
+        display = false;
+        lstCandi = await Http.GetFromJsonAsync<List<Candidate>>("api/candidate");
+        lstLevel = await Http.GetFromJsonAsync<List<Level>>("api/level");
+        lstPosition = await Http.GetFromJsonAsync<List<Position>>("api/position");
+
     }
 
-    void ShowModal()
+    protected async Task ShowModal(int id)
     {
-        
+        candidateId = id;
+        candi = new();
+        if (candidateId != 0)
+        {
+            candi = await Http.GetFromJsonAsync<Candidate>($"api/candidate/{candidateId}");
+        }
+        display = true;
+    }
+
+    protected void HideModal()
+    {
+        display = false;
+    }
+
+    protected async Task PutPost()
+    {
+        if (candidateId == 0)
+        {
+            await Http.PostAsJsonAsync("/api/candidate/", candi);
+        }
+        else
+        {
+            await Http.PutAsJsonAsync($"/api/candidate/{candidateId}", candi);
+        }
+        await OnInitializedAsync();
+    }
+
+    protected async Task Delete(int id)
+    {
+        await Http.DeleteAsync($"api/candidate/{id}");
+        await OnInitializedAsync();
+    }
+
+    protected async Task Search()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(searchStr))
+                lstCandi = await Http.GetFromJsonAsync<List<Candidate>>("api/candidate");
+            else
+                lstCandi = await Http.GetFromJsonAsync<List<Candidate>>($"api/candidate/search?searchStr={searchStr}");
+        }
+        catch
+        {
+            lstCandi = new();
+        }
     }
 }

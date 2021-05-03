@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using CandidateMGMT.Server.Data;
+using CandidateMGMT.Server.Services;
 
 namespace CandidateMGMT.Server
 {
@@ -26,7 +27,14 @@ namespace CandidateMGMT.Server
         {
 
             services.AddControllersWithViews();
+            services.AddControllersWithViews()
+                .AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddRazorPages();
+
+            //Repository Pattern
+            services.AddScoped<ICandidateService, CandidateService>();
+            services.AddScoped<ILevelService, LevelService>();
+            services.AddScoped<IPositionService, PositionService>();
 
             services.AddDbContext<CandidateDbContext>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("CandidateDbContext")));
