@@ -119,26 +119,5 @@ namespace CandidateMGMT.Server.Controllers
                     "Error deleting data");
             }
         }
-
-        [HttpGet("{search}")]
-        public async Task<ActionResult<IEnumerable<Candidate>>> Search(string searchStr)
-        {
-            try
-            {
-                var result = await _candidateService.Search(searchStr);
-
-                if (result.Any())
-                {
-                    return Ok(result);
-                }
-
-                return NotFound();
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError,
-                    "Error retrieving data from the database");
-            }
-        }
     }
 }

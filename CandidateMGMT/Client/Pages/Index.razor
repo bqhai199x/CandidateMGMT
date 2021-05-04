@@ -1,6 +1,8 @@
 ﻿@page "/"
-@inject HttpClient Http
-
+@inject ICandidateService candidateService
+@inject ILevelService levelService
+@inject IPositionService positionService
+@inject IUploadService uploadService
 <!-- Button trigger modal -->
 <button type="button" class="btn btn-primary mt-3" @onclick="() => ShowModal(0)">
     Thêm ứng viên
@@ -45,7 +47,7 @@
                 <td>@item.Phone</td>
                 <td>@item.Email</td>
                 <td>@item.IntroduceName</td>
-                <td>@item.CVPath</td>
+                <td><button class="btn btn-link" @onclick="() => ShowCV(item.CandidateId)">@item.CVPath</button></td>
                 <td class="text-center">
                     <button class="btn btn-outline-success btn-sm mr-1" @onclick="() => ShowModal(item.CandidateId)">Sửa</button>
                     <button class="btn btn-outline-danger btn-sm" @onclick="() => Delete(item.CandidateId)">Xoá</button>
@@ -71,23 +73,23 @@
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label>Vị trí</label>
-                                <InputSelect class="custom-select" @bind-Value="candi.LevelId">
+                                <InputSelect class="custom-select" @bind-Value="candi.LevelId" required>
                                     <option hidden></option>
                                     @foreach (var item in lstLevel)
-                                    {
+                                        {
                                         <option value="@item.LevelId">@item.LevelName</option>
-                                    }
+                                        }
                                 </InputSelect>
                             </div>
 
                             <div class="form-group col-md-6">
                                 <label>Chức danh</label>
-                                <InputSelect class="custom-select" @bind-Value="candi.PositionId">
+                                <InputSelect class="custom-select" @bind-Value="candi.PositionId" required>
                                     <option hidden></option>
                                     @foreach (var item in lstPosition)
-                                    {
+                                        {
                                         <option value="@item.PositionId">@item.PositionName</option>
-                                    }
+                                        }
                                 </InputSelect>
                             </div>
                         </div>
@@ -96,7 +98,7 @@
                             <div class="form-group col-md-6">
                                 <label>Import CV</label>
                                 <div class="custom-file">
-                                    <InputFile class="custom-file-input" id="customFile" @bind-Value="@candi.CVPath" multiple/>
+                                    <InputFile id="customFile" OnChange="OnInputFileChange" multiple />
                                     <label class="custom-file-label" for="customFile">Choose file</label>
                                 </div>
                             </div>
@@ -110,29 +112,29 @@
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label>Họ tên</label>
-                                <input class="form-control" @bind-value="@candi.FullName" />
+                                <InputText class="form-control" @bind-Value="@candi.FullName" required />
                             </div>
                             <div class="form-group col-md-6">
                                 <label>Phone</label>
-                                <input class="form-control" @bind-value="@candi.Phone" />
+                                <InputText class="form-control" @bind-Value="@candi.Phone" />
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group col-md-6">
                                 <label for="inputBirthday">Birthday</label>
-                                <input type="text" class="form-control" @bind-value="@candi.Birthday" />
+                                <InputText type="text" class="form-control" @bind-Value="@candi.Birthday" />
                             </div>
                             <div class="form-group col-md-6">
                                 <label for="inputEmail">Email</label>
-                                <input type="text" class="form-control" @bind-value="@candi.Email" />
+                                <InputText type="text" class="form-control" @bind-Value="@candi.Email" />
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group col-md-12">
                                 <label for="inputAddress">Address</label>
-                                <input type="text" class="form-control" @bind-value="@candi.Address" />
+                                <InputText type="text" class="form-control" @bind-Value="@candi.Address" />
                             </div>
                         </div>
                         <div class="text-center">
@@ -148,13 +150,36 @@
     </div>
 }
 
+@if (displayCV)
+{
+    <div class="modal fade show d-block">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">CV ứng viên</h5>
+                    <button type="button" class="close" @onclick="HideModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <embed src="@CVPath" frameborder="0" width="100%" height="700px" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
 
     private bool display { get; set; }
 
+    private bool displayCV { get; set; }
+
     private int candidateId { get; set; }
 
     private string searchStr { get; set; }
+
+    private string CVPath { get; set; }
 
     private Candidate candi = new();
 
@@ -166,10 +191,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        display = false;
-        lstCandi = await Http.GetFromJsonAsync<List<Candidate>>("api/candidate");
-        lstLevel = await Http.GetFromJsonAsync<List<Level>>("api/level");
-        lstPosition = await Http.GetFromJsonAsync<List<Position>>("api/position");
+        HideModal();
+        lstCandi = (await candidateService.GetByStatus(0)).ToList();
+        lstLevel = (await levelService.GetAll()).ToList();
+        lstPosition = (await positionService.GetAll()).ToList();
 
     }
 
@@ -179,32 +204,29 @@
         candi = new();
         if (candidateId != 0)
         {
-            candi = await Http.GetFromJsonAsync<Candidate>($"api/candidate/{candidateId}");
+            candi = await candidateService.GetById(candidateId);
         }
         display = true;
+    }
+
+    protected async Task ShowCV(int id)
+    {
+        candidateId = id;
+        candi = await candidateService.GetById(candidateId);
+        CVPath = "http://localhost:52871/" + candi.CVPath;
+        displayCV = true;
     }
 
     protected void HideModal()
     {
         display = false;
+        displayCV = false;
     }
 
-    protected async Task PutPost()
-    {
-        if (candidateId == 0)
-        {
-            await Http.PostAsJsonAsync("/api/candidate/", candi);
-        }
-        else
-        {
-            await Http.PutAsJsonAsync($"/api/candidate/{candidateId}", candi);
-        }
-        await OnInitializedAsync();
-    }
 
     protected async Task Delete(int id)
     {
-        await Http.DeleteAsync($"api/candidate/{id}");
+        await candidateService.Delete(id);
         await OnInitializedAsync();
     }
 
@@ -213,13 +235,53 @@
         try
         {
             if (string.IsNullOrEmpty(searchStr))
-                lstCandi = await Http.GetFromJsonAsync<List<Candidate>>("api/candidate");
+                lstCandi = (await candidateService.GetAll()).ToList();
             else
-                lstCandi = await Http.GetFromJsonAsync<List<Candidate>>($"api/candidate/search?searchStr={searchStr}");
+                lstCandi = (await candidateService.Search(searchStr)).ToList();
         }
         catch
         {
             lstCandi = new();
         }
+    }
+
+    IBrowserFile selectedFiles;
+
+    protected void OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        selectedFiles = e.File;
+        this.StateHasChanged();
+    }
+
+    protected async Task PutPost()
+    {
+        if (selectedFiles != null)
+        {
+            Stream stream = selectedFiles.OpenReadStream();
+            MemoryStream ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            stream.Close();
+
+            UploadedFile file = new UploadedFile();
+            file.FileName = selectedFiles.Name;
+            file.FileContent = ms.ToArray();
+            ms.Close();
+
+            await uploadService.Upload(file);
+
+            candi.CVPath = file.FileName;
+            selectedFiles = null;
+        }
+
+        if (candidateId == 0)
+        {
+            await candidateService.Create(candi);
+        }
+        else
+        {
+            await candidateService.Update(candi, candidateId);
+        }
+        await OnInitializedAsync();
+        this.StateHasChanged();
     }
 }

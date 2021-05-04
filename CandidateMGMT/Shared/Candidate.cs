@@ -28,6 +28,8 @@
 
         public string CVPath { get; set; }
 
+        public bool IsApplied { get; set; }
+
         public int Status { get; set; }
 
         [ForeignKey("LevelId")]
@@ -35,5 +37,7 @@
 
         [ForeignKey("PositionId")]
         public virtual Position Position { get; set; }
+
+        public virtual Interview Interview { get; set; }
     }
 }

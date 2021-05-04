@@ -1,0 +1,180 @@
+﻿@page "/approve"
+@inject ICandidateService candidateService
+@inject ILevelService levelService
+@inject IPositionService positionService
+
+<form action="/Approve/Index/">
+    <div class="input-group w-25 py-3">
+        <input type="text" class="form-control" placeholder="Nhập từ khoá" name="searchstr">
+        <div class="input-group-append">
+            <button class="btn btn-primary" type="submit">
+                Tìm kiếm
+            </button>
+        </div>
+    </div>
+</form>
+
+<form action="/Approve/Index/">
+    <div class="form-row w-25">
+        <div class="form-group col-md-6">
+            <label>Vị trí</label>
+            <select class="custom-select">
+                <option hidden></option>
+                @foreach (var item in lstPosition)
+                {
+                    <option value="@item.PositionId">@item.PositionName</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group col-md-6">
+            <label>Chức danh</label>
+            <select class="custom-select">
+                <option hidden></option>
+                @foreach (var item in lstLevel)
+                {
+                    <option value="@item.LevelId">@item.LevelName</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <button type="reset" class="btn btn-primary">Đặt lại</button>&nbsp;&nbsp;
+    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+</form>
+
+<!-- List candidate -->
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr class="text-center bg-secondary text-white">
+            <th scope="col">STT</th>
+            <th scope="col">Họ tên</th>
+            <th scope="col">Vị trí</th>
+            <th scope="col">Chức danh</th>
+            <th scope="col">Ngày sinh</th>
+            <th scope="col">Địa chỉ</th>
+            <th scope="col">Nguồn</th>
+            <th scope="col">Đã từng apply</th>
+            <th scope="col">Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in lstCandi)
+        {
+            count++;
+            <tr>
+                <td class="text-center">@count</td>
+                <td>@item.FullName</td>
+                <td>@item.Position.PositionName</td>
+                <td>@item.Level.LevelName</td>
+                <td>@item.Birthday</td>
+                <td>@item.Address</td>
+                <td>@item.IntroduceName</td>
+                <td>
+                    @if (item.IsApplied)
+                    {
+                        <span>CV Không được duyệt</span>
+                    }
+                </td>
+                <td class="text-center">
+                    @if (IsPDF(item.CVPath))
+                    {
+                        <button type="button" class="btn btn-info btn-sm" @onclick="() => ShowCV(item.CandidateId)">Xem CV</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-info btn-sm">Tải CV</button>
+                        <button type="button" class="btn btn-success btn-sm">Duyệt</button>
+                        <button type="button" class="btn btn-danger btn-sm">Loại</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (displayCV)
+{
+    <div class="modal fade show d-block">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">CV ứng viên</h5>
+                    <button type="button" class="close" @onclick="HideModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <embed src="@CVPath" frameborder="0" width="100%" height="700px" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success btn-sm" @onclick="()=>ChangStatus(true)">Duyệt</button>
+                    <button type="button" class="btn btn-danger btn-sm" @onclick="()=>ChangStatus(false)">Loại</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private int count = 0;
+
+    private bool displayCV { get; set; }
+
+    private int candidateId { get; set; }
+
+    private string CVPath { get; set; }
+
+    private Candidate candi = new();
+
+    private List<Level> lstLevel = new();
+
+    private List<Position> lstPosition = new();
+
+    private List<Candidate> lstCandi = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        HideModal();
+        lstCandi = (await candidateService.GetByStatus(0,1)).ToList();
+        lstLevel = (await levelService.GetAll()).ToList();
+        lstPosition = (await positionService.GetAll()).ToList();
+    }
+
+    public bool IsPDF(string fileName)
+    {
+        int index = fileName.LastIndexOf(".");
+        string extension = fileName.Substring(index);
+        if (extension.ToLower() == ".pdf")
+            return true;
+        return false;
+    }
+
+    protected async Task ShowCV(int id)
+    {
+        candidateId = id;
+        candi = await candidateService.GetById(candidateId);
+        CVPath = "http://localhost:52871/" + candi.CVPath;
+        displayCV = true;
+    }
+
+    protected void HideModal()
+    {
+        displayCV = false;
+    }
+
+    protected async Task ChangStatus(bool isApprove)
+    {
+        if (isApprove)
+        {
+            candi.Status = 2;
+        }
+        else
+        {
+            candi.Status = 1;
+            candi.IsApplied = true;
+        }
+        await candidateService.Update(candi, candidateId);
+        await OnInitializedAsync();
+    }
+}

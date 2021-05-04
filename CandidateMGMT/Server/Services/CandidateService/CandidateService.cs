@@ -75,14 +75,5 @@ namespace CandidateMGMT.Server.Services
             }
             return null;
         }
-
-        public async Task<IEnumerable<Candidate>> Search(string searchStr)
-        {
-            return await _context.Candidate
-                .Where(x => x.FullName.Contains(searchStr))
-                .Include(x => x.Level)
-                .Include(x => x.Position)
-                .ToListAsync();
-        }
     }
 }

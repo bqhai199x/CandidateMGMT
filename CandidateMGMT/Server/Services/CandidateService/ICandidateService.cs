@@ -11,6 +11,5 @@ namespace CandidateMGMT.Server.Services
         Task<Candidate> Create(Candidate candidate);
         Task<Candidate> Update(Candidate candidate);
         Task<Candidate> Delete(int candidateId);
-        Task<IEnumerable<Candidate>> Search(string searchStr);
     }
 }
