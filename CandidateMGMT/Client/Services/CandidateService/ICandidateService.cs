@@ -23,5 +23,7 @@ namespace CandidateMGMT.Client.Services
         Task<IEnumerable<Candidate>> GetByStatus(int status1, int status2);
 
         Task<IEnumerable<Candidate>> GetByStatus(int status1, int status2, int status3);
+     
+        Task<IEnumerable<Candidate>> GetWithFiltering(int? positionId, int? levelId);
     }
 }

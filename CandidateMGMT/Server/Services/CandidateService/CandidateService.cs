@@ -56,10 +56,10 @@ namespace CandidateMGMT.Server.Services
                 result.Phone = candidate.Phone;
                 result.CVPath = candidate.CVPath;
                 result.IntroduceName = candidate.IntroduceName;
+                result.IsApplied = candidate.IsApplied;
+                result.Status = candidate.Status;
 
                 await _context.SaveChangesAsync();
-
-                return result;
             }
             return null;
         }

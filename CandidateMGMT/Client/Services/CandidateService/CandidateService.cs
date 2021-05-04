@@ -64,5 +64,19 @@ namespace CandidateMGMT.Client.Services
             var result = await GetAll();
             return result.Where(x => x.Status == status1 || x.Status == status2 || x.Status == status3);
         }
+
+        public async Task<IEnumerable<Candidate>> GetWithFiltering(int? positionId, int? levelId)
+        {
+            var result = await GetAll();
+            if(positionId != null)
+            {
+                result = result.Where(x => x.PositionId == positionId);
+            }
+            if (levelId != null)
+            {
+                result = result.Where(x => x.LevelId == positionId);
+            }
+            return result;
+        }
     }
 }

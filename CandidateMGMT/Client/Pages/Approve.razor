@@ -3,7 +3,7 @@
 @inject ILevelService levelService
 @inject IPositionService positionService
 
-<form action="/Approve/Index/">
+<form>
     <div class="input-group w-25 py-3">
         <input type="text" class="form-control" placeholder="Nhập từ khoá" name="searchstr">
         <div class="input-group-append">
@@ -14,7 +14,7 @@
     </div>
 </form>
 
-<form action="/Approve/Index/">
+<form @onsubmit="Filter">
     <div class="form-row w-25">
         <div class="form-group col-md-6">
             <label>Vị trí</label>
@@ -83,9 +83,9 @@
                     }
                     else
                     {
-                        <button type="button" class="btn btn-info btn-sm">Tải CV</button>
-                        <button type="button" class="btn btn-success btn-sm">Duyệt</button>
-                        <button type="button" class="btn btn-danger btn-sm">Loại</button>
+                        <button type="button" class="btn btn-info btn-sm" onclick="location.href='http://localhost:52871/@item.CVPath'">Tải CV</button>
+                        <button type="button" class="btn btn-success btn-sm" @onclick="()=>ChangStatus(item.CandidateId,true)">Duyệt</button>
+                        <button type="button" class="btn btn-danger btn-sm" @onclick="()=>ChangStatus(item.CandidateId,false)">Loại</button>
                     }
                 </td>
             </tr>
@@ -175,6 +175,29 @@
             candi.IsApplied = true;
         }
         await candidateService.Update(candi, candidateId);
+        await OnInitializedAsync();
+    }
+
+    protected async Task ChangStatus(int id, bool isApprove)
+    {
+        candi = await candidateService.GetById(id);
+
+        if (isApprove)
+        {
+            candi.Status = 2;
+        }
+        else
+        {
+            candi.Status = 1;
+            candi.IsApplied = true;
+        }
+        await candidateService.Update(candi, id);
+        await OnInitializedAsync();
+    }
+
+    protected async Task Filter()
+    {
+        lstCandi = (await candidateService.GetWithFiltering(null, null)).ToList();
         await OnInitializedAsync();
     }
 }
