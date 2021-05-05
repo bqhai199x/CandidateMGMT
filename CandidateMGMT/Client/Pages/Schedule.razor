@@ -15,11 +15,11 @@
     </div>
 </form>
 
-<form method="post">
+<form>
     <div class="form-row w-75">
         <div class="form-group col-md-2">
             <label>Vị trí</label>
-            <select class="custom-select">
+            <select class="custom-select" @onchange="PositonSelected">
                 <option hidden></option>
                 @foreach (var item in lstPosition)
                 {
@@ -30,7 +30,7 @@
 
         <div class="form-group col-md-2">
             <label>Chức danh</label>
-            <select class="custom-select">
+            <select class="custom-select" @onchange="LevelSelected">
                 <option hidden></option>
                 @foreach (var item in lstLevel)
                 {
@@ -41,11 +41,11 @@
 
         <div class="form-group col-md-2">
             <label>Liên hệ</label>
-            <select class="form-control custom-select" name="Contacted">
+            <select class="form-control custom-select" @onchange="ContactedSelect">
                 <option hidden></option>
-                <option value="1">Chưa liên hệ</option>
-                <option value="2">Đã liên hệ</option>
-                <option value="3">Không liên hệ được</option>
+                <option value="0">Chưa liên hệ</option>
+                <option value="1">Đã liên hệ</option>
+                <option value="2">Không liên hệ được</option>
             </select>
         </div>
 
@@ -111,15 +111,15 @@
                 <td>@item.Phone</td>
                 <td>@item.Email</td>
                 <td>
-                    @if (item.InterContacted == null)
+                    @if (item.InterContacted == 0)
                     {
 
                     }
-                    else if (item.InterContacted == true)
+                    else if (item.InterContacted == 1)
                     {
                         <span>Đã liên hệ</span>
                     }
-                    else if (item.InterContacted == false)
+                    else if (item.InterContacted == 2)
                     {
                         <span>Không liên hệ được</span>
                     }
@@ -182,9 +182,20 @@
                             </div>
                         </div>
 
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label>Địa điểm PV</label>
+                                <InputSelect class="form-control" @bind-Value="candi.InterContacted">
+                                    <option hidden></option>
+                                    <option value="1">Đã liên hệ</option>
+                                    <option value="2">Không liên hệ được</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+
                         <div class="text-right pt-3">
                             <button type="submit" class="btn btn-success" @onclick="ChangeSchedule">Xác nhận</button>
-                            <button type="button" class="btn btn-danger" @onclick="NotContacted">Không liên lạc được</button>
+                            <button type="button" class="btn btn-danger" @onclick="RemoveSchedule">Xoá</button>
                         </div>
                     </EditForm>
                 </div>
@@ -285,15 +296,15 @@
 
     protected async Task ChangeSchedule()
     {
-        candi.InterContacted = true;
+        candi.InterContacted = 1;
 
         await candidateService.Update(candi, candidateId);
         await OnInitializedAsync();
     }
 
-    protected async Task NotContacted()
+    protected async Task RemoveSchedule()
     {
-        candi.InterContacted = false;
+        candi.InterContacted = 0;
         candi.InterTime = null;
         candi.InterLocation = null;
         candi.InterNote = null;
@@ -351,5 +362,28 @@
         {
             lstCandiId.Add(id);
         }
+    }
+
+    public int positionId { get; set; }
+
+    public int levelId { get; set; }
+
+    public int isContacted { get; set; }
+
+
+    protected void PositonSelected(ChangeEventArgs e)
+    {
+
+        positionId = Convert.ToInt32(e.Value);
+    }
+
+    protected void LevelSelected(ChangeEventArgs e)
+    {
+        levelId = Convert.ToInt32(e.Value);
+    }
+
+    protected void ContactedSelect(ChangeEventArgs e)
+    {
+        isContacted = Convert.ToInt32(e.Value);
     }
 }

@@ -39,7 +39,7 @@
         [ForeignKey("PositionId")]
         public virtual Position Position { get; set; }
 
-        public bool? InterContacted { get; set; }
+        public int InterContacted { get; set; }
 
         public DateTime? InterTime { get; set; }
 
