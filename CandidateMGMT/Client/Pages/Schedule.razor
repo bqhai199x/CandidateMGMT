@@ -3,7 +3,7 @@
 @inject ILevelService levelService
 @inject IPositionService positionService
 @inject ISendMailService sendMailService
-@inject IJSRuntime js
+
 <form>
     <div class="input-group w-25 py-3">
         <input type="text" class="form-control" placeholder="Nhập từ khoá" name="searchstr">
@@ -15,7 +15,7 @@
     </div>
 </form>
 
-<form>
+<form @onsubmit="Filter">
     <div class="form-row w-75">
         <div class="form-group col-md-2">
             <label>Vị trí</label>
@@ -41,7 +41,7 @@
 
         <div class="form-group col-md-2">
             <label>Liên hệ</label>
-            <select class="form-control custom-select" @onchange="ContactedSelect">
+            <select class="form-control custom-select" @onchange="ContactedSelected">
                 <option hidden></option>
                 <option value="0">Chưa liên hệ</option>
                 <option value="1">Đã liên hệ</option>
@@ -51,24 +51,24 @@
 
         <div class="form-group col-md-2">
             <label>PV từ ngày</label>
-            <input type="date" class="form-control" name="FromDate" />
+            <input type="date" class="form-control" @onchange="FromDateSelected" />
         </div>
 
         <div class="form-group col-md-2">
             <label>PV đến ngày</label>
-            <input type="date" class="form-control" name="ToDate" />
+            <input type="date" class="form-control" @onchange="ToDateSelected" />
         </div>
 
         <div class="form-group col-md-2">
             <label>Địa điểm</label>
-            <select class="form-control custom-select" name="Location">
+            <select class="form-control custom-select" @onchange="LocationSelected">
                 <option hidden></option>
                 <option>Hà Nội</option>
                 <option>Huế</option>
             </select>
         </div>
     </div>
-    <button type="reset" class="btn btn-primary">Đặt lại</button>&nbsp;&nbsp;
+    <button type="reset" class="btn btn-primary" @onclick="Reset">Đặt lại</button>&nbsp;&nbsp;
     <button type="submit" class="btn btn-primary">Tìm kiếm</button>
 </form>
 
@@ -296,8 +296,6 @@
 
     protected async Task ChangeSchedule()
     {
-        candi.InterContacted = 1;
-
         await candidateService.Update(candi, candidateId);
         await OnInitializedAsync();
     }
@@ -364,11 +362,17 @@
         }
     }
 
-    public int positionId { get; set; }
+    private int positionId { get; set; }
 
-    public int levelId { get; set; }
+    private int levelId { get; set; }
 
-    public int isContacted { get; set; }
+    private int? isContacted { get; set; }
+
+    private DateTime? fromDate { get; set; }
+
+    private DateTime? toDate { get; set; }
+
+    private string location { get; set; }
 
 
     protected void PositonSelected(ChangeEventArgs e)
@@ -382,8 +386,40 @@
         levelId = Convert.ToInt32(e.Value);
     }
 
-    protected void ContactedSelect(ChangeEventArgs e)
+    protected void ContactedSelected(ChangeEventArgs e)
     {
         isContacted = Convert.ToInt32(e.Value);
+    }
+
+    protected void FromDateSelected(ChangeEventArgs e)
+    {
+        fromDate = Convert.ToDateTime(e.Value);
+    }
+
+    protected void ToDateSelected(ChangeEventArgs e)
+    {
+        toDate = Convert.ToDateTime(e.Value);
+    }
+
+    protected void LocationSelected(ChangeEventArgs e)
+    {
+        location = e.Value.ToString();
+    }
+
+    protected async Task Reset()
+    {
+        positionId = 0;
+        levelId = 0;
+        isContacted = null;
+        fromDate = null;
+        toDate = null;
+        location = null;
+        await OnInitializedAsync();
+    }
+
+    protected void Filter()
+    {
+        lstCandi = candidateService.GetWithFiltering(lstCandi, positionId, levelId, isContacted, fromDate, toDate, location).ToList();
+        StateHasChanged();
     }
 }

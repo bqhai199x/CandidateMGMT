@@ -1,4 +1,5 @@
 ﻿using CandidateMGMT.Shared;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -25,5 +26,7 @@ namespace CandidateMGMT.Client.Services
         Task<IEnumerable<Candidate>> GetByStatus(int status1, int status2, int status3);
      
         IEnumerable<Candidate> GetWithFiltering(IEnumerable<Candidate> candidate, int positionId, int levelId);
+
+        IEnumerable<Candidate> GetWithFiltering(IEnumerable<Candidate> candidate, int positionId, int levelId, int? isContacted, DateTime? fromDate, DateTime? toDate, string location);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using CandidateMGMT.Shared;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -73,6 +74,35 @@ namespace CandidateMGMT.Client.Services
             if (levelId != 0)
             {
                 candidate = candidate.Where(x => x.LevelId == levelId);
+            }
+            return candidate;
+        }
+
+        public IEnumerable<Candidate> GetWithFiltering(IEnumerable<Candidate> candidate, int positionId, int levelId, int? isContacted, DateTime? fromDate, DateTime? toDate, string location)
+        {
+            if (positionId != 0)
+            {
+                candidate = candidate.Where(x => x.PositionId == positionId);
+            }
+            if (levelId != 0)
+            {
+                candidate = candidate.Where(x => x.LevelId == levelId);
+            }
+            if (isContacted != null)
+            {
+                candidate = candidate.Where(x => x.InterContacted == isContacted);
+            }
+            if (fromDate != null)
+            {
+                candidate = candidate.Where(x => x.InterTime > fromDate);
+            }
+            if (toDate != null)
+            {
+                candidate = candidate.Where(x => x.InterTime < toDate);
+            }
+            if (!string.IsNullOrEmpty(location))
+            {
+                candidate = candidate.Where(x => x.InterLocation == location);
             }
             return candidate;
         }
