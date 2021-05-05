@@ -4,14 +4,16 @@ using CandidateMGMT.Server.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace CandidateMGMT.Server.Migrations
 {
     [DbContext(typeof(CandidateDbContext))]
-    partial class CandidateDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210505030915_AddMailInfo")]
+    partial class AddMailInfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -41,18 +43,6 @@ namespace CandidateMGMT.Server.Migrations
                     b.Property<string>("FullName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool?>("InterContacted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("InterLocation")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("InterNote")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("InterTime")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("IntroduceName")
                         .HasColumnType("nvarchar(max)");
 
@@ -61,12 +51,6 @@ namespace CandidateMGMT.Server.Migrations
 
                     b.Property<int?>("LevelId")
                         .HasColumnType("int");
-
-                    b.Property<string>("MailBody")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MailTitle")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
                         .HasColumnType("nvarchar(max)");
@@ -126,7 +110,61 @@ namespace CandidateMGMT.Server.Migrations
                         .WithMany("Candidates")
                         .HasForeignKey("PositionId");
 
+                    b.OwnsOne("CandidateMGMT.Shared.Interview", "Interview", b1 =>
+                        {
+                            b1.Property<int>("CandidateId")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int")
+                                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                            b1.Property<bool?>("IsContacted")
+                                .HasColumnType("bit");
+
+                            b1.Property<string>("Location")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Note")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<DateTime?>("Time")
+                                .HasColumnType("datetime2");
+
+                            b1.HasKey("CandidateId");
+
+                            b1.ToTable("Candidate");
+
+                            b1.WithOwner()
+                                .HasForeignKey("CandidateId");
+                        });
+
+                    b.OwnsOne("CandidateMGMT.Shared.MailInfo", "MailInfo", b1 =>
+                        {
+                            b1.Property<int>("CandidateId")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int")
+                                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                            b1.Property<string>("Body")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Title")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.HasKey("CandidateId");
+
+                            b1.ToTable("Candidate");
+
+                            b1.WithOwner("candidate")
+                                .HasForeignKey("CandidateId");
+
+                            b1.Navigation("candidate");
+                        });
+
+                    b.Navigation("Interview");
+
                     b.Navigation("Level");
+
+                    b.Navigation("MailInfo");
 
                     b.Navigation("Position");
                 });

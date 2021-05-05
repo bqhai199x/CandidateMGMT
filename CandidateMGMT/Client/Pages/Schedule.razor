@@ -1,5 +1,355 @@
 ﻿@page "/schedule"
+@inject ICandidateService candidateService
+@inject ILevelService levelService
+@inject IPositionService positionService
+@inject ISendMailService sendMailService
+@inject IJSRuntime js
+<form>
+    <div class="input-group w-25 py-3">
+        <input type="text" class="form-control" placeholder="Nhập từ khoá" name="searchstr">
+        <div class="input-group-append">
+            <button class="btn btn-primary" type="submit">
+                Tìm kiếm
+            </button>
+        </div>
+    </div>
+</form>
+
+<form method="post">
+    <div class="form-row w-75">
+        <div class="form-group col-md-2">
+            <label>Vị trí</label>
+            <select class="custom-select">
+                <option hidden></option>
+                @foreach (var item in lstPosition)
+                {
+                    <option value="@item.PositionId">@item.PositionName</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group col-md-2">
+            <label>Chức danh</label>
+            <select class="custom-select">
+                <option hidden></option>
+                @foreach (var item in lstLevel)
+                {
+                    <option value="@item.LevelId">@item.LevelName</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group col-md-2">
+            <label>Liên hệ</label>
+            <select class="form-control custom-select" name="Contacted">
+                <option hidden></option>
+                <option value="1">Chưa liên hệ</option>
+                <option value="2">Đã liên hệ</option>
+                <option value="3">Không liên hệ được</option>
+            </select>
+        </div>
+
+        <div class="form-group col-md-2">
+            <label>PV từ ngày</label>
+            <input type="date" class="form-control" name="FromDate" />
+        </div>
+
+        <div class="form-group col-md-2">
+            <label>PV đến ngày</label>
+            <input type="date" class="form-control" name="ToDate" />
+        </div>
+
+        <div class="form-group col-md-2">
+            <label>Địa điểm</label>
+            <select class="form-control custom-select" name="Location">
+                <option hidden></option>
+                <option>Hà Nội</option>
+                <option>Huế</option>
+            </select>
+        </div>
+    </div>
+    <button type="reset" class="btn btn-primary">Đặt lại</button>&nbsp;&nbsp;
+    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+</form>
+
+<div class="text-right">
+    <button class="btn btn-success" @onclick="SendEmail">Gửi mail</button>&nbsp;
+    <button class="btn btn-success" @onclick="CreateMail">Tạo nội dung mail</button>
+</div>
+
+<!-- List candidate -->
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr class="text-center bg-secondary text-white">
+            <th scope="col"></th>
+            <th scope="col">Họ tên</th>
+            <th scope="col">Vị trí</th>
+            <th scope="col">Chức danh</th>
+            <th scope="col">Số điện thoại</th>
+            <th scope="col">Email</th>
+            <th scope="col">Liên hệ</th>
+            <th scope="col">Thời gian PV</th>
+            <th scope="col">Địa điểm PV</th>
+            <th scope="col">Ghi chú</th>
+            <th scope="col">Trạng thái</th>
+            <th scope="col">Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in lstCandi)
+        {
+            <tr>
+                <td class="text-center">
+                    <input type="checkbox" id="CandidateId" @onchange="() => Checked(item.CandidateId)" />
+                </td>
+
+                <td>
+                    @item.FullName
+                </td>
+                <td>@item.Position.PositionName</td>
+                <td>@item.Level.LevelName</td>
+                <td>@item.Phone</td>
+                <td>@item.Email</td>
+                <td>
+                    @if (item.InterContacted == null)
+                    {
+
+                    }
+                    else if (item.InterContacted == true)
+                    {
+                        <span>Đã liên hệ</span>
+                    }
+                    else if (item.InterContacted == false)
+                    {
+                        <span>Không liên hệ được</span>
+                    }
+                </td>
+                <td>@item.InterTime</td>
+                <td>@item.InterLocation</td>
+                <td>@item.InterNote</td>
+                <td>Duyệt CV</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-info btn-sm" @onclick="() => ShowSchedule(item.CandidateId)">Lịch PV</button>&nbsp;
+                    @if (item.MailTitle != null)
+                    {
+                        <button type="button" class="btn btn-success btn-sm" @onclick="() => ShowMail(item.CandidateId)">Preview</button>
+                    }
+                </td>
+
+            </tr>
+        }
+
+
+    </tbody>
+</table>
+
+@if (displaySchedule)
+{
+    <!--Modal-->
+    <div class="modal fade show d-block">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Lịch phỏng vấn</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="HideModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@candi">
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label>Thời gian PV</label>
+                                <InputDate @bind-Value="candi.InterTime" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label>Địa điểm PV</label>
+                                <InputSelect class="form-control" @bind-Value="candi.InterLocation">
+                                    <option hidden></option>
+                                    <option>Hà Nội</option>
+                                    <option>Huế</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label>Ghi chú</label>
+                                <InputText @bind-Value="candi.InterNote" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="text-right pt-3">
+                            <button type="submit" class="btn btn-success" @onclick="ChangeSchedule">Xác nhận</button>
+                            <button type="button" class="btn btn-danger" @onclick="NotContacted">Không liên lạc được</button>
+                        </div>
+                    </EditForm>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@if (displayMail)
+{
+    <!-- Modal -->
+    <div class="modal fade show d-block">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Gửi mail cho ứng viên</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="HideModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="mailModalBody">
+                    <EditForm Model="@candi">
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label>To</label>
+                                <input type="text" class="form-control" @bind-value="candi.Email">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label>Subject</label>
+                                <input type="text" class="form-control" @bind-value="candi.MailTitle">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-md-12">
+                                <label>Body</label>
+                                <InputTextArea class="form-control" rows="8" @bind-Value="candi.MailBody"></InputTextArea>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                            <button type="submit" class="btn btn-success" @onclick="ChangMail">Save</button>
+                        </div>
+                    </EditForm>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
 
 @code {
+    private Candidate candi = new();
 
+    private List<Level> lstLevel = new();
+
+    private List<Position> lstPosition = new();
+
+    private List<Candidate> lstCandi = new();
+
+    private bool displaySchedule { get; set; }
+
+    private bool displayMail { get; set; }
+
+    private int candidateId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        HideModal();
+        lstCandi = (await candidateService.GetByStatus(2)).ToList();
+        lstLevel = (await levelService.GetAll()).ToList();
+        lstPosition = (await positionService.GetAll()).ToList();
+    }
+
+    protected void HideModal()
+    {
+        displaySchedule = false;
+        displayMail = false;
+    }
+
+    protected async Task ShowSchedule(int id)
+    {
+        candidateId = id;
+        candi = await candidateService.GetById(candidateId);
+        displaySchedule = true;
+    }
+
+    protected async Task ShowMail(int id)
+    {
+        candidateId = id;
+        candi = await candidateService.GetById(candidateId);
+        displayMail = true;
+    }
+
+    protected async Task ChangeSchedule()
+    {
+        candi.InterContacted = true;
+
+        await candidateService.Update(candi, candidateId);
+        await OnInitializedAsync();
+    }
+
+    protected async Task NotContacted()
+    {
+        candi.InterContacted = false;
+        candi.InterTime = null;
+        candi.InterLocation = null;
+        candi.InterNote = null;
+        candi.MailTitle = null;
+        candi.MailBody = null;
+        await candidateService.Update(candi, candidateId);
+        await OnInitializedAsync();
+    }
+
+    protected async Task CreateMail()
+    {
+        foreach (var item in lstCandiId)
+        {
+            candi = await candidateService.GetById(item);
+            candi.MailTitle = "Saishunkan System VietNam_Thư mời phỏng vấn";
+            candi.MailBody =
+                $"Xin chào bạn {candi.FullName}.\r\n" +
+                $"Cảm ơn bạn đã ứng tuyển vị trí {candi.Level.LevelName} {candi.Position.PositionName} tại công ty chúng tôi.\r\n" +
+                $"\r\n" +
+                $"Chúng tôi gửi thông tin phỏng vấn như sau:\r\n" +
+                $"Thời gian: {candi.InterTime}\r\n" +
+                $"Địa điểm: {candi.InterLocation}\r\n" +
+                $"\r\n" +
+                $"Thanks & Regards";
+            await candidateService.Update(candi, candi.CandidateId);
+        }
+        await OnInitializedAsync();
+    }
+
+    protected async Task SendEmail()
+    {
+        foreach (var item in lstCandiId)
+        {
+            candi = await candidateService.GetById(item);
+            await sendMailService.SendMail(candi);
+        }
+        HideModal();
+    }
+
+    protected async Task ChangMail()
+    {
+        await candidateService.Update(candi, candidateId);
+        HideModal();
+    }
+
+    private List<int> lstCandiId = new();
+
+    protected void Checked(int id)
+    {
+        if (lstCandiId.Any(x => x == id))
+        {
+            lstCandiId.Remove(id);
+        }
+        else
+        {
+            lstCandiId.Add(id);
+        }
+    }
 }

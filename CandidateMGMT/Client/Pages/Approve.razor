@@ -3,9 +3,9 @@
 @inject ILevelService levelService
 @inject IPositionService positionService
 
-<form>
+<form @onsubmit="Search">
     <div class="input-group w-25 py-3">
-        <input type="text" class="form-control" placeholder="Nhập từ khoá" name="searchstr">
+        <input type="text" class="form-control" placeholder="Tìm kiếm ứng viên" @bind="searchStr">
         <div class="input-group-append">
             <button class="btn btn-primary" type="submit">
                 Tìm kiếm
@@ -18,7 +18,7 @@
     <div class="form-row w-25">
         <div class="form-group col-md-6">
             <label>Vị trí</label>
-            <select class="custom-select">
+            <select class="custom-select" @onchange="PositonSelected">
                 <option hidden></option>
                 @foreach (var item in lstPosition)
                 {
@@ -29,7 +29,7 @@
 
         <div class="form-group col-md-6">
             <label>Chức danh</label>
-            <select class="custom-select">
+            <select class="custom-select" @onchange="LevelSelected">
                 <option hidden></option>
                 @foreach (var item in lstLevel)
                 {
@@ -39,7 +39,7 @@
         </div>
     </div>
 
-    <button type="reset" class="btn btn-primary">Đặt lại</button>&nbsp;&nbsp;
+    <button type="reset" @onclick="Reset" class="btn btn-primary">Đặt lại</button>&nbsp;&nbsp;
     <button type="submit" class="btn btn-primary">Tìm kiếm</button>
 </form>
 
@@ -84,13 +84,14 @@
                     else
                     {
                         <button type="button" class="btn btn-info btn-sm" onclick="location.href='http://localhost:52871/@item.CVPath'">Tải CV</button>
-                        <button type="button" class="btn btn-success btn-sm" @onclick="()=>ChangStatus(item.CandidateId,true)">Duyệt</button>
-                        <button type="button" class="btn btn-danger btn-sm" @onclick="()=>ChangStatus(item.CandidateId,false)">Loại</button>
+                        <button type="button" class="btn btn-success btn-sm" @onclick="() => ChangStatus(item.CandidateId, true)">Duyệt</button>
+                        <button type="button" class="btn btn-danger btn-sm" @onclick="() => ChangStatus(item.CandidateId, false)">Loại</button>
                     }
                 </td>
             </tr>
         }
     </tbody>
+    @{count = 0;}
 </table>
 
 @if (displayCV)
@@ -108,8 +109,8 @@
                     <embed src="@CVPath" frameborder="0" width="100%" height="700px" />
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-success btn-sm" @onclick="()=>ChangStatus(true)">Duyệt</button>
-                    <button type="button" class="btn btn-danger btn-sm" @onclick="()=>ChangStatus(false)">Loại</button>
+                    <button type="button" class="btn btn-success btn-sm" @onclick="() => ChangStatus(true)">Duyệt</button>
+                    <button type="button" class="btn btn-danger btn-sm" @onclick="() => ChangStatus(false)">Loại</button>
                 </div>
             </div>
         </div>
@@ -136,7 +137,7 @@
     protected override async Task OnInitializedAsync()
     {
         HideModal();
-        lstCandi = (await candidateService.GetByStatus(0,1)).ToList();
+        lstCandi = (await candidateService.GetByStatus(0, 1)).ToList();
         lstLevel = (await levelService.GetAll()).ToList();
         lstPosition = (await positionService.GetAll()).ToList();
     }
@@ -195,9 +196,49 @@
         await OnInitializedAsync();
     }
 
-    protected async Task Filter()
+    protected void Filter()
     {
-        lstCandi = (await candidateService.GetWithFiltering(null, null)).ToList();
-        await OnInitializedAsync();
+        lstCandi = candidateService.GetWithFiltering(lstCandi, PositionId, LevelId).ToList();
+        StateHasChanged();
+    }
+
+    private int PositionId { get; set; }
+
+    private int LevelId { get; set; }
+
+
+    protected void PositonSelected(ChangeEventArgs e)
+    {
+
+        PositionId = Convert.ToInt32(e.Value);
+    }
+
+    protected void LevelSelected(ChangeEventArgs e)
+    {
+        LevelId = Convert.ToInt32(e.Value);
+    }
+
+    protected async Task Reset()
+    {
+        PositionId = 0;
+        LevelId = 0;
+        lstCandi = (await candidateService.GetByStatus(0, 1)).ToList();
+    }
+
+    private string searchStr { get; set; }
+
+    protected async Task Search()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(searchStr))
+                lstCandi = (await candidateService.GetByStatus(0, 1)).ToList();
+            else
+                lstCandi = candidateService.Search(lstCandi, searchStr).ToList();
+        }
+        catch
+        {
+            lstCandi = new();
+        }
     }
 }

@@ -58,6 +58,12 @@ namespace CandidateMGMT.Server.Services
                 result.IntroduceName = candidate.IntroduceName;
                 result.IsApplied = candidate.IsApplied;
                 result.Status = candidate.Status;
+                result.InterContacted = candidate.InterContacted;
+                result.InterTime = candidate.InterTime;
+                result.InterLocation = candidate.InterLocation;
+                result.InterNote = candidate.InterNote;
+                result.MailTitle = candidate.MailTitle;
+                result.MailBody = candidate.MailBody;
 
                 await _context.SaveChangesAsync();
             }

@@ -41,10 +41,9 @@ namespace CandidateMGMT.Client.Services
             await _httpClient.DeleteAsync($"/api/candidate/{candidateId}");
         }
 
-        public async Task<IEnumerable<Candidate>> Search(string searchStr)
+        public IEnumerable<Candidate> Search(IEnumerable<Candidate> candidate, string searchStr)
         {
-            var result = await GetAll();
-            return result.Where(x => x.FullName.ToLower().Contains(searchStr.ToLower()));
+            return candidate.Where(x => x.FullName.ToLower().Contains(searchStr.ToLower()));
         }
 
         public async Task<IEnumerable<Candidate>> GetByStatus(int status)
@@ -65,18 +64,17 @@ namespace CandidateMGMT.Client.Services
             return result.Where(x => x.Status == status1 || x.Status == status2 || x.Status == status3);
         }
 
-        public async Task<IEnumerable<Candidate>> GetWithFiltering(int? positionId, int? levelId)
+        public IEnumerable<Candidate> GetWithFiltering(IEnumerable<Candidate> candidate, int positionId, int levelId)
         {
-            var result = await GetAll();
-            if(positionId != null)
+            if(positionId != 0)
             {
-                result = result.Where(x => x.PositionId == positionId);
+                candidate = candidate.Where(x => x.PositionId == positionId);
             }
-            if (levelId != null)
+            if (levelId != 0)
             {
-                result = result.Where(x => x.LevelId == positionId);
+                candidate = candidate.Where(x => x.LevelId == levelId);
             }
-            return result;
+            return candidate;
         }
     }
 }

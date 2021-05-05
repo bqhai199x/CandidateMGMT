@@ -16,7 +16,7 @@ namespace CandidateMGMT.Client.Services
 
         Task Delete(int candidateId);
 
-        Task<IEnumerable<Candidate>> Search(string searchStr);
+        IEnumerable<Candidate> Search(IEnumerable<Candidate> candidate, string searchStr);
 
         Task<IEnumerable<Candidate>> GetByStatus(int status);
 
@@ -24,6 +24,6 @@ namespace CandidateMGMT.Client.Services
 
         Task<IEnumerable<Candidate>> GetByStatus(int status1, int status2, int status3);
      
-        Task<IEnumerable<Candidate>> GetWithFiltering(int? positionId, int? levelId);
+        IEnumerable<Candidate> GetWithFiltering(IEnumerable<Candidate> candidate, int positionId, int levelId);
     }
 }

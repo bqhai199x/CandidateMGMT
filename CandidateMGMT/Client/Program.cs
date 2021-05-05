@@ -20,6 +20,7 @@ namespace CandidateMGMT.Client
             builder.Services.AddScoped<ILevelService, LevelService>();
             builder.Services.AddScoped<IPositionService, PositionService>();
             builder.Services.AddScoped<IUploadService, UploadService>();
+            builder.Services.AddScoped<ISendMailService, SendMailService>();
 
             await builder.Build().RunAsync();
         }

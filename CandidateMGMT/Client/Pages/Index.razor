@@ -3,6 +3,7 @@
 @inject ILevelService levelService
 @inject IPositionService positionService
 @inject IUploadService uploadService
+
 <!-- Button trigger modal -->
 <button type="button" class="btn btn-primary mt-3" @onclick="() => ShowModal(0)">
     Thêm ứng viên
@@ -192,7 +193,7 @@
     protected override async Task OnInitializedAsync()
     {
         HideModal();
-        lstCandi = (await candidateService.GetByStatus(0)).ToList();
+        lstCandi = (await candidateService.GetAll()).ToList();
         lstLevel = (await levelService.GetAll()).ToList();
         lstPosition = (await positionService.GetAll()).ToList();
 
@@ -237,7 +238,7 @@
             if (string.IsNullOrEmpty(searchStr))
                 lstCandi = (await candidateService.GetAll()).ToList();
             else
-                lstCandi = (await candidateService.Search(searchStr)).ToList();
+                lstCandi =  candidateService.Search(lstCandi, searchStr).ToList();
         }
         catch
         {

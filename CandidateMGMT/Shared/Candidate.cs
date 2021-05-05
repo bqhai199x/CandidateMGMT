@@ -1,5 +1,6 @@
 ﻿namespace CandidateMGMT.Shared
 {
+    using System;
     using System.ComponentModel.DataAnnotations;
     using System.ComponentModel.DataAnnotations.Schema;
 
@@ -38,6 +39,16 @@
         [ForeignKey("PositionId")]
         public virtual Position Position { get; set; }
 
-        public virtual Interview Interview { get; set; }
+        public bool? InterContacted { get; set; }
+
+        public DateTime? InterTime { get; set; }
+
+        public string InterLocation { get; set; }
+
+        public string InterNote { get; set; }
+
+        public string MailTitle { get; set; }
+
+        public string MailBody { get; set; }
     }
 }
